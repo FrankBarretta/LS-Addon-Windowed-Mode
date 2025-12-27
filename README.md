@@ -58,6 +58,31 @@ This project is an addon for **LosslessProxy** designed to improve the overlay m
 *   [ImGui](https://github.com/ocornut/imgui): For the graphical user interface.
 *   DirectX 11 (D3D11/DXGI): For graphics management and proxying.
 
-## License
+## ⚠️ Disclaimer
 
-See the LICENSE file for details (if present).
+This add-on is an unofficial extension for Lossless Scaling.
+
+It is NOT affiliated with, endorsed by, or supported by
+Lossless Scaling Developers in any way.
+
+This add-on was developed through independent analysis and
+reverse engineering of the software behavior. No proprietary
+source code or assets are included.
+
+Use at your own risk.
+
+The author assumes no responsibility for any damage, data loss,
+account bans, or other consequences resulting from the use of
+this add-on.
+
+This add-on may interact with the software at runtime in
+non-documented ways.
+
+
+## Legal Notice / Trademarks
+
+All trademarks, product names, and company names are the property
+of their respective owners and are used for identification purposes only.
+
+
+
