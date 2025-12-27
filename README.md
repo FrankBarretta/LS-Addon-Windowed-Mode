@@ -1,6 +1,11 @@
 # LS Windowed Mode Addon
 
-This project is an addon for **LosslessProxy** designed to improve the overlay management of Lossless Scaling. It implements an advanced windowed mode, split-screen functionality, and a virtual monitor to force the desired behavior of the graphics engine.
+**LS Windowed Mode** is an experimental addon for **Lossless Scaling** that introduces a **secondary virtual display**, selectable directly from the Lossless Scaling menu.
+
+When this virtual display is selected:
+
+* the **Lossless Scaling overlay is no longer displayed in fullscreen**
+* instead, the overlay is shown **in windowed mode**, allowing for more flexible use cases such as multitasking or specific desktop setups.
 
 ## Key Features
 
@@ -9,6 +14,56 @@ This project is an addon for **LosslessProxy** designed to improve the overlay m
 *   **Position Mode**: Allows anchoring the window to specific positions.
 *   **ImGui Interface**: Includes an in-game graphical overlay to configure settings in real-time.
 *   **Logging**: Integrated logging system for debugging.
+
+---
+
+<img width="2269" height="1379" alt="Screenshot 2025-12-27 232140" src="https://github.com/user-attachments/assets/6124ed7b-8deb-4444-9c62-37de5ad1f272" />
+
+
+---
+
+## Installation
+
+To use this addon, you must **first install the LS Addon Manager (LosslessProxy)**.
+
+### 1. Install LS Addon Manager
+
+Download the latest release of **LS Addon Manager (LosslessProxy)** from:
+👉 [https://github.com/FrankBarretta/LS-Addons-Manager](https://github.com/FrankBarretta/LS-Addons-Manager)
+
+Follow the instructions in that repository to complete the installation.
+
+---
+
+### 2. Install LS Windowed Mode
+
+1. Download **`LS_Windowed.dll`** from the addon project’s release page.
+2. Go to the **main Lossless Scaling installation folder**.
+3. Create a folder named:
+
+   ```
+   addons
+   ```
+4. Inside the `addons` folder, create another folder named:
+
+   ```
+   LS_Windowed
+   ```
+5. Place the downloaded **`LS_Windowed.dll`** file inside the `LS_Windowed` folder.
+
+The final folder structure should look like this:
+
+```
+Lossless Scaling/
+└── addons/
+    └── LS_Windowed/
+        └── LS_Windowed.dll
+```
+
+---
+
+✅ **Done!**
+The addon is now installed and available in Lossless Scaling.
 
 ## Requirements
 
@@ -43,14 +98,6 @@ This project is an addon for **LosslessProxy** designed to improve the overlay m
 
 5.  **Output**:
     The compiled file `LS_Windowed.dll` will be located in the `Release` folder (e.g., `build/Release/LS_Windowed.dll`).
-
-## Installation and Usage
-
-1.  Ensure you have **LosslessProxy** installed and configured for the target game.
-2.  Copy the generated `LS_Windowed.dll` file into the folder where LosslessProxy loads addons (i.e., the `addons` folder in the main Lossless Scaling directory).
-3.  Start the game.
-4.  The addon should be loaded automatically.
-5.  The configuration interface (ImGui) should be accessible via the LosslessProxy overlay or configured hotkeys.
 
 ## Technologies Used
 
