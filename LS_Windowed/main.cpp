@@ -16,8 +16,6 @@
 #include <mutex>
 
 // Global variables
-ID3D11Device *g_d3dDevice = nullptr;
-ID3D11DeviceContext *g_d3dContext = nullptr;
 ImGuiContext* g_ImGuiContext = nullptr;
 std::mutex g_StateMutex;
 
@@ -82,13 +80,10 @@ void UpdateTargetRect() {
 typedef BOOL(WINAPI *EnumDisplayMonitors_t)(HDC, LPCRECT, MONITORENUMPROC,
                                             LPARAM);
 typedef BOOL(WINAPI *GetMonitorInfoW_t)(HMONITOR, LPMONITORINFO);
-typedef BOOL(WINAPI *EnumDisplayDevicesW_t)(LPCWSTR, DWORD, PDISPLAY_DEVICEW,
-                                            DWORD);
 typedef HRESULT(WINAPI *CreateDXGIFactory1_t)(REFIID, void **);
 
 EnumDisplayMonitors_t fpEnumDisplayMonitors = nullptr;
 GetMonitorInfoW_t fpGetMonitorInfoW = nullptr;
-EnumDisplayDevicesW_t fpEnumDisplayDevicesW = nullptr;
 CreateDXGIFactory1_t fpCreateDXGIFactory1 = nullptr;
 
 // Forward declarations
@@ -363,12 +358,6 @@ BOOL WINAPI Detour_GetMonitorInfoW(HMONITOR hMonitor, LPMONITORINFO lpmi) {
   return fpGetMonitorInfoW(hMonitor, lpmi);
 }
 
-BOOL WINAPI Detour_EnumDisplayDevicesW(LPCWSTR lpDevice, DWORD iDevNum,
-                                       PDISPLAY_DEVICEW lpDisplayDevice,
-                                       DWORD dwFlags) {
-  return fpEnumDisplayDevicesW(lpDevice, iDevNum, lpDisplayDevice, dwFlags);
-}
-
 HRESULT WINAPI Detour_CreateDXGIFactory1(REFIID riid, void **ppFactory) {
   HRESULT hr = fpCreateDXGIFactory1(riid, ppFactory);
   if (SUCCEEDED(hr) && ppFactory && *ppFactory) {
@@ -481,22 +470,6 @@ extern "C" __declspec(dllexport) const char* GetAddonVersion() {
     return "1.0.0";
 }
 
-// Exported function for AddonManager
-extern "C" __declspec(dllexport) void
-SetD3D11Device(ID3D11Device *device, ID3D11DeviceContext *context) {
-  g_d3dDevice = device;
-  g_d3dContext = context;
-
-  if (g_d3dDevice) {
-    g_d3dDevice->AddRef();
-  }
-  if (g_d3dContext) {
-    g_d3dContext->AddRef();
-  }
-
-  Log("[LS_Windowed] D3D11 Device set.");
-}
-
 // DLL Entry Point
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
                       LPVOID lpReserved) {
@@ -522,10 +495,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     g_Running = false;
     Log("[LS_Windowed] DLL_PROCESS_DETACH");
     RemoveHooks();
-    if (g_d3dDevice)
-      g_d3dDevice->Release();
-    if (g_d3dContext)
-      g_d3dContext->Release();
     Logger::Close();
     break;
   }
