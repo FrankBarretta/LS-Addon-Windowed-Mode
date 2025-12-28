@@ -10,7 +10,7 @@
 #include <vector>
 #include <windows.h>
 
-#include "../../LosslessProxy/src/addon_api.hpp"
+#include "../../../LosslessProxy/src/addon_api.hpp"
 #include "imgui.h"
 
 #include <mutex>

@@ -33,7 +33,7 @@ add_library(LS_Windowed SHARED ${SOURCES})
 target_include_directories(LS_Windowed PRIVATE 
     ${MINHOOK_DIR}/include
     ${imgui_SOURCE_DIR}
-    ../../LosslessProxy/src
+    ../../../LosslessProxy/src
 )
 
 # Add ImGui source files
@@ -53,13 +53,13 @@ target_link_libraries(LS_Windowed
 
 # Set output directory
 set_target_properties(LS_Windowed PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../addons/LS_Windowed"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../addons/LS_Windowed"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../LS_Windowed"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../LS_Windowed"
 )
 
 # Copy to addons directory after build
 add_custom_command(TARGET LS_Windowed POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/../../addons/LS_Windowed"
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:LS_Windowed> "${CMAKE_SOURCE_DIR}/../../addons/LS_Windowed/"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/../../LS_Windowed"
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:LS_Windowed> "${CMAKE_SOURCE_DIR}/../../LS_Windowed/"
     COMMENT "Copying LS_Windowed.dll to addons directory"
 )
