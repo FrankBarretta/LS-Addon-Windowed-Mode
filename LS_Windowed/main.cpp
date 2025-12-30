@@ -39,6 +39,52 @@ RECT g_TargetRect = {0, 0, 1920, 1080}; // Default
 RECT g_LSRect = {0, 0, 1920, 1080}; // Position for LS window
 HWND g_hTargetWindow = nullptr;
 
+RECT CalculatePositionedRect(HWND hTarget, RECT rcTargetClient) {
+  RECT result = rcTargetClient; // Default fallback
+
+  if (!hTarget || !IsWindow(hTarget))
+    return result;
+
+  RECT targetWindowRect;
+  if (!GetWindowRect(hTarget, &targetWindowRect))
+    return result;
+
+  int lsWidth = rcTargetClient.right - rcTargetClient.left;
+  int lsHeight = rcTargetClient.bottom - rcTargetClient.top;
+
+  if (lsWidth <= 0 || lsHeight <= 0)
+    return result;
+
+  int targetWidth = targetWindowRect.right - targetWindowRect.left;
+  int targetHeight = targetWindowRect.bottom - targetWindowRect.top;
+
+  RECT newLSRect = {0, 0, lsWidth, lsHeight};
+  int gap = 0;
+
+  // Position LS relative to Target.
+  if (g_Settings.PositionSide == 0) { // Left
+    newLSRect.left = targetWindowRect.left - lsWidth - gap;
+    int centerY = targetWindowRect.top + targetHeight / 2;
+    newLSRect.top = centerY - lsHeight / 2;
+  } else if (g_Settings.PositionSide == 1) { // Right
+    newLSRect.left = targetWindowRect.right + gap;
+    int centerY = targetWindowRect.top + targetHeight / 2;
+    newLSRect.top = centerY - lsHeight / 2;
+  } else if (g_Settings.PositionSide == 2) { // Top
+    int centerX = targetWindowRect.left + targetWidth / 2;
+    newLSRect.left = centerX - lsWidth / 2;
+    newLSRect.top = targetWindowRect.top - lsHeight - gap;
+  } else { // Bottom
+    int centerX = targetWindowRect.left + targetWidth / 2;
+    newLSRect.left = centerX - lsWidth / 2;
+    newLSRect.top = targetWindowRect.bottom + gap;
+  }
+  newLSRect.right = newLSRect.left + lsWidth;
+  newLSRect.bottom = newLSRect.top + lsHeight;
+
+  return newLSRect;
+}
+
 void UpdateTargetRect() {
   HWND hForeground = GetForegroundWindow();
   if (!hForeground)
@@ -64,12 +110,21 @@ void UpdateTargetRect() {
 
     // Ensure valid rect
     if (rcScreen.right > rcScreen.left && rcScreen.bottom > rcScreen.top) {
+      
+      RECT positionedRect = rcScreen;
+      if (g_Settings.PositionMode) {
+          positionedRect = CalculatePositionedRect(hForeground, rcScreen);
+      }
+
       std::lock_guard<std::mutex> lock(g_StateMutex);
       g_TargetRect = rcScreen;
       g_hTargetWindow = hForeground;
       
       // Initialize g_LSRect if it's empty or we are not in position mode yet
-      if (g_LSRect.right == 0 || !g_Settings.PositionMode) {
+      // Also update it if we are in PositionMode to ensure correct initial placement
+      if (g_Settings.PositionMode) {
+          g_LSRect = positionedRect;
+      } else if (g_LSRect.right == 0) {
           g_LSRect = g_TargetRect;
       }
     }
@@ -234,55 +289,7 @@ void UpdateWindowPositions() {
 
   if (!targetWindow || !IsWindow(targetWindow)) return;
 
-  // Get Target Window Rect (Frame) - This is the actual window on screen
-  RECT targetWindowRect;
-  if (!GetWindowRect(targetWindow, &targetWindowRect)) return;
-
-  // LS Window Size (based on Target Client Area usually, stored in g_TargetRect)
-  int lsWidth = targetRect.right - targetRect.left;
-  int lsHeight = targetRect.bottom - targetRect.top;
-  
-  if (lsWidth <= 0 || lsHeight <= 0) return;
-
-  int targetWidth = targetWindowRect.right - targetWindowRect.left;
-  int targetHeight = targetWindowRect.bottom - targetWindowRect.top;
-
-  RECT newLSRect = {0, 0, lsWidth, lsHeight};
-  RECT newTargetRect = targetWindowRect;
-  int gap = 0;
-
-  // Calculate combined size
-  int combinedWidth = 0;
-  int combinedHeight = 0;
-
-  if (g_Settings.PositionSide == 0 || g_Settings.PositionSide == 1) { // Left/Right
-    combinedWidth = targetWidth + lsWidth + gap;
-    combinedHeight = max(targetHeight, lsHeight);
-  } else { // Top/Bottom
-    combinedWidth = max(targetWidth, lsWidth);
-    combinedHeight = targetHeight + lsHeight + gap;
-  }
-
-  // Position LS relative to Target.
-  if (g_Settings.PositionSide == 0) { // Left
-      newLSRect.left = targetWindowRect.left - lsWidth - gap;
-      int centerY = targetWindowRect.top + targetHeight / 2;
-      newLSRect.top = centerY - lsHeight / 2;
-  } else if (g_Settings.PositionSide == 1) { // Right
-      newLSRect.left = targetWindowRect.right + gap;
-      int centerY = targetWindowRect.top + targetHeight / 2;
-      newLSRect.top = centerY - lsHeight / 2;
-  } else if (g_Settings.PositionSide == 2) { // Top
-      int centerX = targetWindowRect.left + targetWidth / 2;
-      newLSRect.left = centerX - lsWidth / 2;
-      newLSRect.top = targetWindowRect.top - lsHeight - gap;
-  } else { // Bottom
-      int centerX = targetWindowRect.left + targetWidth / 2;
-      newLSRect.left = centerX - lsWidth / 2;
-      newLSRect.top = targetWindowRect.bottom + gap;
-  }
-  newLSRect.right = newLSRect.left + lsWidth;
-  newLSRect.bottom = newLSRect.top + lsHeight;
+  RECT newLSRect = CalculatePositionedRect(targetWindow, targetRect);
 
   {
       std::lock_guard<std::mutex> lock(g_StateMutex);
@@ -293,8 +300,10 @@ void UpdateWindowPositions() {
   if (g_FoundOverlay && IsWindow(g_FoundOverlay)) {
       RECT currentOverlayRect;
       GetWindowRect(g_FoundOverlay, &currentOverlayRect);
+      int width = newLSRect.right - newLSRect.left;
+      int height = newLSRect.bottom - newLSRect.top;
       if (abs(currentOverlayRect.left - newLSRect.left) > 2 || abs(currentOverlayRect.top - newLSRect.top) > 2) {
-          SetWindowPos(g_FoundOverlay, NULL, newLSRect.left, newLSRect.top, lsWidth, lsHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+          SetWindowPos(g_FoundOverlay, NULL, newLSRect.left, newLSRect.top, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
       }
   }
 }
