@@ -64,12 +64,12 @@ RECT CalculatePositionedRect(HWND hTarget, RECT rcTargetClient) {
   // Position LS relative to Target.
   if (g_Settings.PositionSide == 0) { // Left
     newLSRect.left = targetWindowRect.left - lsWidth - gap;
-    int centerY = targetWindowRect.top + targetHeight / 2;
-    newLSRect.top = centerY - lsHeight / 2;
+    // Align with client area top to account for title bar
+    newLSRect.top = rcTargetClient.top;
   } else if (g_Settings.PositionSide == 1) { // Right
     newLSRect.left = targetWindowRect.right + gap;
-    int centerY = targetWindowRect.top + targetHeight / 2;
-    newLSRect.top = centerY - lsHeight / 2;
+    // Align with client area top to account for title bar
+    newLSRect.top = rcTargetClient.top;
   } else if (g_Settings.PositionSide == 2) { // Top
     int centerX = targetWindowRect.left + targetWidth / 2;
     newLSRect.left = centerX - lsWidth / 2;
