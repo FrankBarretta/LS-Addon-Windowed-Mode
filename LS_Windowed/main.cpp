@@ -401,6 +401,32 @@ HRESULT WINAPI Detour_CreateDXGIFactory1(REFIID riid, void **ppFactory) {
   return hr;
 }
 
+// --- Config Helper ---
+
+extern "C" __declspec(dllexport) void AddonInitialize(IHost* host, ImGuiContext* ctx, void* alloc_func, void* free_func, void* user_data);
+
+void LoadSettings(const std::wstring& path) {
+    g_Settings.SplitMode = GetPrivateProfileIntW(L"Settings", L"SplitMode", 0, path.c_str());
+    g_Settings.SplitType = GetPrivateProfileIntW(L"Settings", L"SplitType", 0, path.c_str());
+    g_Settings.PositionMode = GetPrivateProfileIntW(L"Settings", L"PositionMode", 0, path.c_str());
+    g_Settings.PositionSide = GetPrivateProfileIntW(L"Settings", L"PositionSide", 1, path.c_str());
+}
+
+void SaveSettings() {
+    HMODULE hModule = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&AddonInitialize, &hModule);
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(hModule, path, MAX_PATH);
+    wchar_t* lastSlash = wcsrchr(path, L'\\');
+    if (lastSlash) *(lastSlash + 1) = L'\0';
+    std::wstring configPath = std::wstring(path) + L"config.ini";
+
+    WritePrivateProfileStringW(L"Settings", L"SplitMode", std::to_wstring(g_Settings.SplitMode).c_str(), configPath.c_str());
+    WritePrivateProfileStringW(L"Settings", L"SplitType", std::to_wstring(g_Settings.SplitType).c_str(), configPath.c_str());
+    WritePrivateProfileStringW(L"Settings", L"PositionMode", std::to_wstring(g_Settings.PositionMode).c_str(), configPath.c_str());
+    WritePrivateProfileStringW(L"Settings", L"PositionSide", std::to_wstring(g_Settings.PositionSide).c_str(), configPath.c_str());
+}
+
 extern "C" __declspec(dllexport) void AddonInitialize(IHost* host, ImGuiContext* ctx, void* alloc_func, void* free_func, void* user_data) {
     g_ImGuiContext = ctx;
     Log("[LS_Windowed] AddonInitialize called");
@@ -419,12 +445,14 @@ extern "C" __declspec(dllexport) void AddonRenderSettings() {
 
     bool splitMode = g_Settings.SplitMode;
     bool positionMode = g_Settings.PositionMode;
+    bool changed = false;
 
     // Disable Split Mode if Position Mode is active
     if (positionMode) ImGui::BeginDisabled();
     if (ImGui::Checkbox("Enable Split Mode", &splitMode)) {
         g_Settings.SplitMode = splitMode;
         Log("[LS_Windowed] SplitMode changed to %d", splitMode);
+        changed = true;
     }
     if (positionMode) ImGui::EndDisabled();
 
@@ -434,6 +462,7 @@ extern "C" __declspec(dllexport) void AddonRenderSettings() {
         if (ImGui::Combo("Split Type", &currentSplitType, splitTypes, 4)) {
             g_Settings.SplitType = currentSplitType;
             Log("[LS_Windowed] SplitType changed to %d", currentSplitType);
+            changed = true;
         }
     }
 
@@ -444,6 +473,7 @@ extern "C" __declspec(dllexport) void AddonRenderSettings() {
     if (ImGui::Checkbox("Enable Window Positioning", &positionMode)) {
         g_Settings.PositionMode = positionMode;
         Log("[LS_Windowed] PositionMode changed to %d", positionMode);
+        changed = true;
     }
     if (splitMode) ImGui::EndDisabled();
 
@@ -453,9 +483,12 @@ extern "C" __declspec(dllexport) void AddonRenderSettings() {
         if (ImGui::Combo("Position Side", &currentPosSide, posTypes, 4)) {
             g_Settings.PositionSide = currentPosSide;
             Log("[LS_Windowed] PositionSide changed to %d", currentPosSide);
+            changed = true;
         }
         ImGui::TextWrapped("Positions the virtual window relative to the target window.");
     }
+
+    if (changed) SaveSettings();
 }
 
 extern "C" __declspec(dllexport) uint32_t GetAddonCapabilities() {
@@ -484,6 +517,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
     std::wstring logPath =
         (dllPath.parent_path() / "LS_Windowed.log").wstring();
     Logger::Init(logPath);
+
+    LoadSettings((dllPath.parent_path() / "config.ini").wstring());
 
     Log("[LS_Windowed] DLL_PROCESS_ATTACH");
 
